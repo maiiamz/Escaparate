@@ -420,6 +420,119 @@ gsap.to(nube2Grupo.position, {
     repeat: -1            // infinito
 });
 
+//------Nube 3 (pequeña y lejana, completamente independiente)------
+const nube3Grupo = new THREE.Group();
+scene.add(nube3Grupo);
+
+// Posición y tamaño (y = altura base alrededor de la cual flota)
+// z más cerca de la pared del fondo (-1.5) y escala chica = se ve lejana
+const nube3X = -1.45;
+const nube3Y = 0.95;
+const nube3Z = -1.4;
+nube3Grupo.position.set(nube3X, nube3Y - 0.05, nube3Z); // arranca en el punto más bajo del flote
+nube3Grupo.scale.setScalar(0.45);
+
+// Configuración de la animación
+const nube3Amplitud = 0.05;   // cuánto sube y baja desde su altura base (en unidades)
+const nube3Duracion = 3.4;    // segundos que tarda cada subida o bajada (más lenta = más lejana)
+const nube3Delay = 0.5;       // desfase para que no flote sincronizada con las otras
+
+// Material: blanco con un toque azulado para dar sensación de distancia
+const nube3Mat = new THREE.MeshStandardMaterial({color:'#e6f1fb', metalness: 0, roughness: 1});
+
+// Esferas que forman la nube: [x, y, z, radio]
+const nube3Bolas = [
+    [ 0.00,  0.00, 0.00, 0.35],
+    [-0.38, -0.08, 0.05, 0.25],
+    [ 0.42, -0.07, 0.00, 0.27],
+    [-0.10,  0.21, 0.00, 0.27],
+    [ 0.24,  0.15, 0.05, 0.24],
+    [-0.68, -0.14, 0.00, 0.17],
+    [ 0.70, -0.13, 0.00, 0.17],
+];
+
+// Una sola geometría de esfera, reutilizada y escalada según el radio de cada bola
+const nube3Geo = new THREE.SphereGeometry(1, 24, 24);
+
+nube3Bolas.forEach(([x, y, z, radio]) => {
+    const bola = new THREE.Mesh(nube3Geo, nube3Mat);
+    bola.position.set(x, y, z);
+    bola.scale.setScalar(radio);
+    nube3Grupo.add(bola);
+});
+console.log("Nube 3");
+
+//------Animación de la nube 3 (flota de arriba a abajo)------
+gsap.to(nube3Grupo.position, {
+    y: nube3Y + nube3Amplitud,
+    duration: nube3Duracion,
+    delay: nube3Delay,
+    ease: "sine.inOut",   // movimiento suave, como flotando
+    yoyo: true,           // sube y baja
+    repeat: -1            // infinito
+});
+
+//------Nube 4 (cruza el cielo de lado a lado, completamente independiente)------
+const nube4Grupo = new THREE.Group();
+scene.add(nube4Grupo);
+
+// Posición y tamaño (x = centro del recorrido, y = altura base alrededor de la cual flota)
+const nube4X = 0;
+const nube4Y = 1.6;
+const nube4Z = -1.35;   // detrás de las nubes 1 y 2, así pasa por detrás de ellas
+nube4Grupo.position.set(nube4X - 1.2, nube4Y - 0.04, nube4Z); // arranca en el extremo izquierdo
+nube4Grupo.scale.setScalar(0.55);
+
+// Configuración de la animación
+const nube4Recorrido = 1.2;   // cuánto se aleja del centro hacia cada lado (en unidades)
+const nube4DuracionCruce = 14; // segundos que tarda en ir de un extremo al otro
+const nube4Amplitud = 0.04;   // cuánto sube y baja mientras avanza
+const nube4DuracionFlote = 2.6; // segundos de cada subida o bajada
+
+// Material: blanco mate para que se vea suave
+const nube4Mat = new THREE.MeshStandardMaterial({color:'#f4f9ff', metalness: 0, roughness: 1});
+
+// Esferas que forman la nube: [x, y, z, radio]
+const nube4Bolas = [
+    [ 0.00,  0.00, 0.00, 0.34],
+    [ 0.40, -0.08, 0.05, 0.26],
+    [-0.40, -0.07, 0.00, 0.27],
+    [ 0.12,  0.21, 0.00, 0.27],
+    [-0.22,  0.15, 0.05, 0.23],
+    [ 0.70, -0.14, 0.00, 0.17],
+    [-0.70, -0.13, 0.00, 0.18],
+];
+
+// Una sola geometría de esfera, reutilizada y escalada según el radio de cada bola
+const nube4Geo = new THREE.SphereGeometry(1, 24, 24);
+
+nube4Bolas.forEach(([x, y, z, radio]) => {
+    const bola = new THREE.Mesh(nube4Geo, nube4Mat);
+    bola.position.set(x, y, z);
+    bola.scale.setScalar(radio);
+    nube4Grupo.add(bola);
+});
+console.log("Nube 4");
+
+//------Animación de la nube 4 (cruza lento de lado a lado + flota)------
+// Desplazamiento horizontal: va de izquierda a derecha y regresa
+gsap.to(nube4Grupo.position, {
+    x: nube4X + nube4Recorrido,
+    duration: nube4DuracionCruce,
+    ease: "sine.inOut",   // se frena un poco en los extremos, como si el viento cambiara
+    yoyo: true,
+    repeat: -1
+});
+
+// Flote vertical: sube y baja suavemente mientras avanza
+gsap.to(nube4Grupo.position, {
+    y: nube4Y + nube4Amplitud,
+    duration: nube4DuracionFlote,
+    ease: "sine.inOut",
+    yoyo: true,
+    repeat: -1
+});
+
 //------Destello del escudo (solo resplandor difuso, sin líneas)------
 const destelloGrupo = new THREE.Group();
 scene.add(destelloGrupo);
