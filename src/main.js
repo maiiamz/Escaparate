@@ -43,7 +43,7 @@ scene.add(luzDireccional);
 
 
 //------Escaparate-------
-const ancho = 4; //pared a pared
+const ancho = 6; //pared a pared
 const alto = 4; //piso a pared
 const fondo = 3; //profundidad del escaparate
 
