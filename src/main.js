@@ -157,6 +157,7 @@ espada1Grupo.add(espada1Pivote);
 const espada1AnguloBase = Math.PI * 0.7;
 const espada1AnguloSwing = Math.PI / 10;  // cuánto sube y baja alrededor del ángulo base (18°)
 const espada1DuracionSwing = 1.2;         // segundos que tarda cada subida o bajada
+const espada1Ease = "power3.inOut";       // lento al inicio, rápido en medio, lento al llegar
 const espada1MangoEnMaximo = true;        // true = el mango es el extremo máximo del eje largo
 
 //material
@@ -222,7 +223,7 @@ espada1Pivote.rotation.x = espada1AnguloBase - espada1AnguloSwing; // posición 
 gsap.to(espada1Pivote.rotation, {
     x: espada1AnguloBase + espada1AnguloSwing,
     duration: espada1DuracionSwing,
-    ease: "sine.inOut",   // arranque y frenado suaves, como una mano
+    ease: espada1Ease,    // lento al arrancar, rápido en medio, lento al llegar
     yoyo: true,           // va y regresa
     repeat: -1            // infinito
 });
@@ -248,6 +249,7 @@ espada2Grupo.add(espada2Pivote);
 const espada2AnguloBase = Math.PI * -0.7;
 const espada2AnguloSwing = Math.PI / 10;  // cuánto sube y baja alrededor del ángulo base (18°)
 const espada2DuracionSwing = 1.2;         // segundos que tarda cada subida o bajada
+const espada2Ease = "power3.inOut";       // lento al inicio, rápido en medio, lento al llegar
 const espada2MangoEnMaximo = true;        // true = el mango es el extremo máximo del eje largo
 
 //material
@@ -313,7 +315,7 @@ espada2Pivote.rotation.x = espada2AnguloBase + espada2AnguloSwing; // posición 
 gsap.to(espada2Pivote.rotation, {
     x: espada2AnguloBase - espada2AnguloSwing,
     duration: espada2DuracionSwing,
-    ease: "sine.inOut",   // arranque y frenado suaves, como una mano
+    ease: espada2Ease,    // lento al arrancar, rápido en medio, lento al llegar
     yoyo: true,           // va y regresa
     repeat: -1            // infinito
 });
