@@ -72,12 +72,17 @@ const escaparate = new THREE.Mesh(escaparateGeo, escaparateMat);
 scene.add(escaparate);
 console.log("escaparate");
 
+//------Adelanto de los elementos internos------
+// Se suma a la posición z del escudo, espadas, nubes y destello (positivo = hacia la cámara)
+// Con 0 todo vuelve a su posición original
+const adelanto = 0.4;
+
 //------Escudo------
 const escudoGrupo = new THREE.Group();
 scene.add(escudoGrupo);
 
 // Posición, rotación, tamaño 
-escudoGrupo.position.set(0, 0.5, -0.7);
+escudoGrupo.position.set(0, 0.5, -0.7 + adelanto);
 escudoGrupo.rotation.x = 0;
 escudoGrupo.rotation.y = Math.PI / -2;
 escudoGrupo.rotation.z = 0;
@@ -140,7 +145,7 @@ const espada1Grupo = new THREE.Group();
 scene.add(espada1Grupo);
 
 // Posición, rotación, tamaño (la posición marca dónde está el MANGO)
-espada1Grupo.position.set(-1.5, -1, -0.4);
+espada1Grupo.position.set(-1.5, -1, -0.4 + adelanto);
 espada1Grupo.rotation.x = 0;
 espada1Grupo.rotation.y = Math.PI / -2;
 espada1Grupo.rotation.z = 0;
@@ -233,7 +238,7 @@ const espada2Grupo = new THREE.Group();
 scene.add(espada2Grupo);
 
 // Posición, rotación, tamaño (la posición marca dónde está el MANGO)
-espada2Grupo.position.set(1.5, -1, -0.3);
+espada2Grupo.position.set(1.5, -1, -0.3 + adelanto);
 espada2Grupo.rotation.x = 0;
 espada2Grupo.rotation.y = Math.PI / -2;
 espada2Grupo.rotation.z = 0;
@@ -327,7 +332,7 @@ scene.add(nubeGrupo);
 // Posición y tamaño (y = altura base alrededor de la cual flota)
 const nubeX = -1;
 const nubeY = 1.5;
-const nubeZ = -1.2;
+const nubeZ = -1.2 + adelanto;
 nubeGrupo.position.set(nubeX, nubeY - 0.08, nubeZ); // arranca en el punto más bajo del flote
 nubeGrupo.scale.setScalar(1);
 
@@ -376,7 +381,7 @@ scene.add(nube2Grupo);
 // Posición y tamaño (y = altura base alrededor de la cual flota)
 const nube2X = 1;
 const nube2Y = 1.4;
-const nube2Z = -1.2;
+const nube2Z = -1.2 + adelanto;
 nube2Grupo.position.set(nube2X, nube2Y - 0.08, nube2Z); // arranca en el punto más bajo del flote
 nube2Grupo.scale.setScalar(0.9);
 
@@ -425,10 +430,10 @@ const nube3Grupo = new THREE.Group();
 scene.add(nube3Grupo);
 
 // Posición y tamaño (y = altura base alrededor de la cual flota)
-// z más cerca de la pared del fondo (-1.5) y escala chica = se ve lejana
+// z más cerca de la pared del fondo y escala chica = se ve lejana
 const nube3X = -1.45;
 const nube3Y = 0.95;
-const nube3Z = -1.4;
+const nube3Z = -1.4 + adelanto;
 nube3Grupo.position.set(nube3X, nube3Y - 0.05, nube3Z); // arranca en el punto más bajo del flote
 nube3Grupo.scale.setScalar(0.45);
 
@@ -479,7 +484,7 @@ scene.add(nube4Grupo);
 // Posición y tamaño (x = centro del recorrido, y = altura base alrededor de la cual flota)
 const nube4X = 0;
 const nube4Y = 1.6;
-const nube4Z = -1.35;   // detrás de las nubes 1 y 2, así pasa por detrás de ellas
+const nube4Z = -1.35 + adelanto;   // detrás de las nubes 1 y 2, así pasa por detrás de ellas
 nube4Grupo.position.set(nube4X - 1.2, nube4Y - 0.04, nube4Z); // arranca en el extremo izquierdo
 nube4Grupo.scale.setScalar(0.55);
 
@@ -533,6 +538,95 @@ gsap.to(nube4Grupo.position, {
     repeat: -1
 });
 
+//------Pasto (hojas en forma de cono sobre el piso, independiente)------
+// El piso del escaparate está en y = -2 y mide 4 (ancho) x 3 (fondo)
+const pastoPisoY = -2;
+const pastoMargenX = 0.05;       // margen respecto a las paredes laterales (evita que se corten)
+const pastoMargenZ = 0.05;       // margen respecto a la pared del fondo
+const pastoGrupos = 3;           // cantidad de grupos que se mecen por separado
+const pastoHojasPorGrupo = 350;  // hojas en cada grupo (total = grupos x hojas)
+const pastoAlturaMin = 0.15;     // altura mínima de una hoja (en unidades)
+const pastoAlturaMax = 0.4;      // altura máxima de una hoja
+const pastoAncho = 0.04;         // radio de la base de cada hoja
+const pastoInclinacion = 0.25;   // cuánto se inclina cada hoja al azar (radianes)
+
+// Tonos de verde (de oscuro a claro): cada hoja toma uno al azar
+const pastoColores = ['#2f7a35', '#3f8f3f', '#52a43e', '#6dbb45', '#8acb55'];
+
+// Una sola geometría de cono con la base en y = 0, escalada por hoja con la matriz
+const pastoGeo = new THREE.ConeGeometry(pastoAncho, 1, 4);
+pastoGeo.translate(0, 0.5, 0);
+
+const pastoMat = new THREE.MeshStandardMaterial({color:'#ffffff', roughness: 0.9, metalness: 0});
+
+const pastoListaGrupos = [];
+
+for (let g = 0; g < pastoGrupos; g++) {
+    // El grupo está en el piso: el balanceo gira desde la base de las hojas
+    const pastoGrupo = new THREE.Group();
+    pastoGrupo.position.set(0, pastoPisoY, 0);
+    scene.add(pastoGrupo);
+
+    const hojas = new THREE.InstancedMesh(pastoGeo, pastoMat, pastoHojasPorGrupo);
+    const matriz = new THREE.Matrix4();
+    const posicion = new THREE.Vector3();
+    const rotacion = new THREE.Quaternion();
+    const escala = new THREE.Vector3();
+    const euler = new THREE.Euler();
+    const color = new THREE.Color();
+
+    for (let i = 0; i < pastoHojasPorGrupo; i++) {
+        // Posición al azar dentro del piso
+        posicion.set(
+            (Math.random() - 0.5) * (ancho - pastoMargenX * 2),
+            0,
+            (Math.random() - 0.5) * (fondo - pastoMargenZ * 2)
+        );
+
+        // Inclinación al azar
+        euler.set(
+            (Math.random() - 0.5) * pastoInclinacion * 2,
+            Math.random() * Math.PI * 2,
+            (Math.random() - 0.5) * pastoInclinacion * 2
+        );
+        rotacion.setFromEuler(euler);
+
+        // Altura al azar (x y z un poco variables para que no todas sean iguales)
+        const altura = pastoAlturaMin + Math.random() * (pastoAlturaMax - pastoAlturaMin);
+        const grosor = 0.8 + Math.random() * 0.6;
+        escala.set(grosor, altura, grosor);
+
+        matriz.compose(posicion, rotacion, escala);
+        hojas.setMatrixAt(i, matriz);
+
+        // Tono de verde al azar
+        color.set(pastoColores[Math.floor(Math.random() * pastoColores.length)]);
+        hojas.setColorAt(i, color);
+    }
+
+    hojas.instanceMatrix.needsUpdate = true;
+    hojas.instanceColor.needsUpdate = true;
+    pastoGrupo.add(hojas);
+    pastoListaGrupos.push(pastoGrupo);
+}
+console.log("Pasto");
+
+//------Animación del pasto (brisa suave: cada grupo se mece a su ritmo)------
+const pastoBalanceo = 0.03;      // cuánto se inclina el grupo (radianes). 0 = sin movimiento
+const pastoDuracionBase = 2.2;   // segundos que tarda cada vaivén (cada grupo varía un poco)
+
+pastoListaGrupos.forEach((pastoGrupo, i) => {
+    pastoGrupo.rotation.z = -pastoBalanceo;
+    gsap.to(pastoGrupo.rotation, {
+        z: pastoBalanceo,
+        duration: pastoDuracionBase + i * 0.6,
+        delay: i * 0.3,
+        ease: "sine.inOut",
+        yoyo: true,
+        repeat: -1
+    });
+});
+
 //------Destello del escudo (solo resplandor difuso, sin líneas)------
 const destelloGrupo = new THREE.Group();
 scene.add(destelloGrupo);
@@ -540,7 +634,7 @@ scene.add(destelloGrupo);
 // Posición: centro del escudo, un poco DETRÁS de él para que el brillo "salga" del escudo
 const destelloX = 0;
 const destelloY = 0.5;
-const destelloZ = -0.85;
+const destelloZ = -0.85 + adelanto;
 destelloGrupo.position.set(destelloX, destelloY, destelloZ);
 
 // Configuración
