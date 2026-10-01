@@ -72,17 +72,13 @@ const escaparate = new THREE.Mesh(escaparateGeo, escaparateMat);
 scene.add(escaparate);
 console.log("escaparate");
 
-//------Adelanto de los elementos internos------
-// Se suma a la posición z del escudo, espadas, nubes y destello (positivo = hacia la cámara)
-// Con 0 todo vuelve a su posición original
-const adelanto = 0.4;
 
 //------Escudo------
 const escudoGrupo = new THREE.Group();
 scene.add(escudoGrupo);
 
 // Posición, rotación, tamaño 
-escudoGrupo.position.set(0, 0.5, -0.7 + adelanto);
+escudoGrupo.position.set(0, 0.5, -0.7);
 escudoGrupo.rotation.x = 0;
 escudoGrupo.rotation.y = Math.PI / -2;
 escudoGrupo.rotation.z = 0;
@@ -94,8 +90,6 @@ const escudoMat = new THREE.MeshStandardMaterial({color:'#ffc400', metalness: 1,
 // Giro continuo
 const velocidadGiro = 0.01;
 
-// Ejes de depuración (rojo = X, verde = Y, azul = Z). Bórralo cuando termines.
-//escudoGrupo.add(new THREE.AxesHelper(2));
 
 // modelo
 const escudo = '/modelos/escudo.gltf'; 
@@ -144,23 +138,21 @@ loader.load(
 const espada1Grupo = new THREE.Group();
 scene.add(espada1Grupo);
 
-// Posición, rotación, tamaño (la posición marca dónde está el MANGO)
-espada1Grupo.position.set(-1.5, -1, -0.4 + adelanto);
+// Posición, rotación, tamaño (posición = MANGO)
+espada1Grupo.position.set(-1.5, -1, -0.4);
 espada1Grupo.rotation.x = 0;
 espada1Grupo.rotation.y = Math.PI / -2;
 espada1Grupo.rotation.z = 0;
 espada1Grupo.scale.setScalar(1.2);
 
-// Pivote: el modelo se acomoda para que el mango quede en su origen,
-// y la animación rota este pivote (así la espada gira desde el mango)
+// Pivote: desde dónde gira la espada
 const espada1Pivote = new THREE.Group();
 espada1Grupo.add(espada1Pivote);
 
 // Configuración de la animación
-// Ángulo base: 0 = espada colgando hacia abajo.
 // Math.PI * 0.7 (~126°) = mango abajo-izquierda y punta arriba-derecha
 const espada1AnguloBase = Math.PI * 0.7;
-const espada1AnguloSwing = Math.PI / 10;  // cuánto sube y baja alrededor del ángulo base (18°)
+const espada1AnguloSwing = Math.PI / 10;  // cuanto sube y baja
 const espada1DuracionSwing = 1.2;         // segundos que tarda cada subida o bajada
 const espada1Ease = "power3.inOut";       // lento al inicio, rápido en medio, lento al llegar
 const espada1MangoEnMaximo = true;        // true = el mango es el extremo máximo del eje largo
@@ -201,7 +193,7 @@ espada1loader.load(
         );
         console.log("Eje largo de la espada 1:", espada1EjeLargo);
 
-        // Punto del mango: centro del modelo, pero en el extremo del eje largo
+        // Punto del mango
         const espada1Mango = espada1Centro.clone();
         espada1Mango[espada1EjeLargo] = espada1MangoEnMaximo ? espada1Caja.max[espada1EjeLargo] : espada1Caja.min[espada1EjeLargo];
 
@@ -222,7 +214,7 @@ espada1loader.load(
     }
 );
 
-//------Animación de la espada 1 (subir y bajar desde el mango)------
+//------Animación de la espada 1 ------
 espada1Pivote.rotation.x = espada1AnguloBase - espada1AnguloSwing; // posición inicial
 
 gsap.to(espada1Pivote.rotation, {
@@ -233,23 +225,22 @@ gsap.to(espada1Pivote.rotation, {
     repeat: -1            // infinito
 });
 
-//------Espada 2 (lado contrario a la espada 1, completamente independiente)------
+//------ Espada 2 ------
 const espada2Grupo = new THREE.Group();
 scene.add(espada2Grupo);
 
-// Posición, rotación, tamaño (la posición marca dónde está el MANGO)
-espada2Grupo.position.set(1.5, -1, -0.3 + adelanto);
+// Posición, rotación, tamaño 
+espada2Grupo.position.set(1.5, -1, -0.3);
 espada2Grupo.rotation.x = 0;
 espada2Grupo.rotation.y = Math.PI / -2;
 espada2Grupo.rotation.z = 0;
 espada2Grupo.scale.setScalar(1.2);
 
-// Pivote propio: la animación rota este pivote (la espada gira desde el mango)
+// Pivote propio
 const espada2Pivote = new THREE.Group();
 espada2Grupo.add(espada2Pivote);
 
 // Configuración de la animación
-// Ángulo base negativo = espejo de la espada 1:
 // mango abajo-derecha y punta arriba-izquierda
 const espada2AnguloBase = Math.PI * -0.7;
 const espada2AnguloSwing = Math.PI / 10;  // cuánto sube y baja alrededor del ángulo base (18°)
@@ -314,8 +305,8 @@ espada2loader.load(
     }
 );
 
-//------Animación de la espada 2 (subir y bajar desde el mango)------
-espada2Pivote.rotation.x = espada2AnguloBase + espada2AnguloSwing; // posición inicial (invertida para espejo)
+//------Animación de la espada 2------
+espada2Pivote.rotation.x = espada2AnguloBase + espada2AnguloSwing; // posición inicial
 
 gsap.to(espada2Pivote.rotation, {
     x: espada2AnguloBase - espada2AnguloSwing,
@@ -325,22 +316,22 @@ gsap.to(espada2Pivote.rotation, {
     repeat: -1            // infinito
 });
 
-//------Nube 1 (geometría propia, completamente independiente)------
+//------Nube 1------
 const nubeGrupo = new THREE.Group();
 scene.add(nubeGrupo);
 
-// Posición y tamaño (y = altura base alrededor de la cual flota)
+// Posición y tamaño
 const nubeX = -1;
 const nubeY = 1.5;
-const nubeZ = -1.2 + adelanto;
+const nubeZ = -1.2;
 nubeGrupo.position.set(nubeX, nubeY - 0.08, nubeZ); // arranca en el punto más bajo del flote
 nubeGrupo.scale.setScalar(1);
 
 // Configuración de la animación
-const nubeAmplitud = 0.08;   // cuánto sube y baja desde su altura base (en unidades)
+const nubeAmplitud = 0.08;   // sube y baja
 const nubeDuracion = 2.5;    // segundos que tarda cada subida o bajada
 
-// Material: blanco mate para que se vea suave
+// Material
 const nubeMat = new THREE.MeshStandardMaterial({color:'#ffffff', metalness: 0, roughness: 1});
 
 // Esferas que forman la nube: [x, y, z, radio]
@@ -354,7 +345,7 @@ const nubeBolas = [
     [ 0.70, -0.14, 0.00, 0.18],
 ];
 
-// Una sola geometría de esfera, reutilizada y escalada según el radio de cada bola
+//Geometría
 const nubeGeo = new THREE.SphereGeometry(1, 24, 24);
 
 nubeBolas.forEach(([x, y, z, radio]) => {
@@ -365,7 +356,7 @@ nubeBolas.forEach(([x, y, z, radio]) => {
 });
 console.log("Nube 1");
 
-//------Animación de la nube 1 (flota de arriba a abajo)------
+//------Animación de la nube 1 ------
 gsap.to(nubeGrupo.position, {
     y: nubeY + nubeAmplitud,
     duration: nubeDuracion,
@@ -374,23 +365,23 @@ gsap.to(nubeGrupo.position, {
     repeat: -1            // infinito
 });
 
-//------Nube 2 (lado contrario a la nube 1, completamente independiente)------
+//------Nube 2------
 const nube2Grupo = new THREE.Group();
 scene.add(nube2Grupo);
 
-// Posición y tamaño (y = altura base alrededor de la cual flota)
+// Posición y tamaño 
 const nube2X = 1;
 const nube2Y = 1.4;
-const nube2Z = -1.2 + adelanto;
+const nube2Z = -1.2;
 nube2Grupo.position.set(nube2X, nube2Y - 0.08, nube2Z); // arranca en el punto más bajo del flote
 nube2Grupo.scale.setScalar(0.9);
 
 // Configuración de la animación
-const nube2Amplitud = 0.08;   // cuánto sube y baja desde su altura base (en unidades)
+const nube2Amplitud = 0.08;   // sube y baja
 const nube2Duracion = 2.8;    // segundos que tarda cada subida o bajada
 const nube2Delay = 1;         // desfase para que no flote sincronizada con la nube 1
 
-// Material: blanco mate para que se vea suave
+// Material
 const nube2Mat = new THREE.MeshStandardMaterial({color:'#ffffff', metalness: 0, roughness: 1});
 
 // Esferas que forman la nube: [x, y, z, radio]
@@ -404,7 +395,7 @@ const nube2Bolas = [
     [-0.68, -0.14, 0.00, 0.19],
 ];
 
-// Una sola geometría de esfera, reutilizada y escalada según el radio de cada bola
+// Geometría
 const nube2Geo = new THREE.SphereGeometry(1, 24, 24);
 
 nube2Bolas.forEach(([x, y, z, radio]) => {
@@ -415,7 +406,7 @@ nube2Bolas.forEach(([x, y, z, radio]) => {
 });
 console.log("Nube 2");
 
-//------Animación de la nube 2 (flota de arriba a abajo)------
+//Animación de la nube 2
 gsap.to(nube2Grupo.position, {
     y: nube2Y + nube2Amplitud,
     duration: nube2Duracion,
@@ -425,24 +416,23 @@ gsap.to(nube2Grupo.position, {
     repeat: -1            // infinito
 });
 
-//------Nube 3 (pequeña y lejana, completamente independiente)------
+//------Nube 3------
 const nube3Grupo = new THREE.Group();
 scene.add(nube3Grupo);
 
-// Posición y tamaño (y = altura base alrededor de la cual flota)
-// z más cerca de la pared del fondo y escala chica = se ve lejana
+// Posición y tamaño 
 const nube3X = -1.45;
 const nube3Y = 0.95;
-const nube3Z = -1.4 + adelanto;
+const nube3Z = -1.4;
 nube3Grupo.position.set(nube3X, nube3Y - 0.05, nube3Z); // arranca en el punto más bajo del flote
 nube3Grupo.scale.setScalar(0.45);
 
 // Configuración de la animación
-const nube3Amplitud = 0.05;   // cuánto sube y baja desde su altura base (en unidades)
-const nube3Duracion = 3.4;    // segundos que tarda cada subida o bajada (más lenta = más lejana)
+const nube3Amplitud = 0.05;   // sube y baja
+const nube3Duracion = 3.4;    // segundos que tarda cada subida o bajada 
 const nube3Delay = 0.5;       // desfase para que no flote sincronizada con las otras
 
-// Material: blanco con un toque azulado para dar sensación de distancia
+// Material
 const nube3Mat = new THREE.MeshStandardMaterial({color:'#e6f1fb', metalness: 0, roughness: 1});
 
 // Esferas que forman la nube: [x, y, z, radio]
@@ -456,7 +446,7 @@ const nube3Bolas = [
     [ 0.70, -0.13, 0.00, 0.17],
 ];
 
-// Una sola geometría de esfera, reutilizada y escalada según el radio de cada bola
+//Geometría
 const nube3Geo = new THREE.SphereGeometry(1, 24, 24);
 
 nube3Bolas.forEach(([x, y, z, radio]) => {
@@ -467,7 +457,7 @@ nube3Bolas.forEach(([x, y, z, radio]) => {
 });
 console.log("Nube 3");
 
-//------Animación de la nube 3 (flota de arriba a abajo)------
+//Animación
 gsap.to(nube3Grupo.position, {
     y: nube3Y + nube3Amplitud,
     duration: nube3Duracion,
@@ -477,24 +467,24 @@ gsap.to(nube3Grupo.position, {
     repeat: -1            // infinito
 });
 
-//------Nube 4 (cruza el cielo de lado a lado, completamente independiente)------
+//------Nube 4------
 const nube4Grupo = new THREE.Group();
 scene.add(nube4Grupo);
 
-// Posición y tamaño (x = centro del recorrido, y = altura base alrededor de la cual flota)
+// Posición y tamaño
 const nube4X = 0;
 const nube4Y = 1.6;
-const nube4Z = -1.35 + adelanto;   // detrás de las nubes 1 y 2, así pasa por detrás de ellas
+const nube4Z = -1.35 <
 nube4Grupo.position.set(nube4X - 1.2, nube4Y - 0.04, nube4Z); // arranca en el extremo izquierdo
 nube4Grupo.scale.setScalar(0.55);
 
 // Configuración de la animación
-const nube4Recorrido = 1.2;   // cuánto se aleja del centro hacia cada lado (en unidades)
+const nube4Recorrido = 1.2;   // cuánto se aleja del centro hacia cada lado 
 const nube4DuracionCruce = 14; // segundos que tarda en ir de un extremo al otro
-const nube4Amplitud = 0.04;   // cuánto sube y baja mientras avanza
+const nube4Amplitud = 0.04;   // sube y baja
 const nube4DuracionFlote = 2.6; // segundos de cada subida o bajada
 
-// Material: blanco mate para que se vea suave
+// Material
 const nube4Mat = new THREE.MeshStandardMaterial({color:'#f4f9ff', metalness: 0, roughness: 1});
 
 // Esferas que forman la nube: [x, y, z, radio]
@@ -508,7 +498,7 @@ const nube4Bolas = [
     [-0.70, -0.13, 0.00, 0.18],
 ];
 
-// Una sola geometría de esfera, reutilizada y escalada según el radio de cada bola
+// Geometría
 const nube4Geo = new THREE.SphereGeometry(1, 24, 24);
 
 nube4Bolas.forEach(([x, y, z, radio]) => {
@@ -519,17 +509,17 @@ nube4Bolas.forEach(([x, y, z, radio]) => {
 });
 console.log("Nube 4");
 
-//------Animación de la nube 4 (cruza lento de lado a lado + flota)------
+// Animación de la nube 4
 // Desplazamiento horizontal: va de izquierda a derecha y regresa
 gsap.to(nube4Grupo.position, {
     x: nube4X + nube4Recorrido,
     duration: nube4DuracionCruce,
-    ease: "sine.inOut",   // se frena un poco en los extremos, como si el viento cambiara
+    ease: "sine.inOut",   // se frena un poco en los extremos
     yoyo: true,
     repeat: -1
 });
 
-// Flote vertical: sube y baja suavemente mientras avanza
+// Flote vertical
 gsap.to(nube4Grupo.position, {
     y: nube4Y + nube4Amplitud,
     duration: nube4DuracionFlote,
@@ -538,8 +528,7 @@ gsap.to(nube4Grupo.position, {
     repeat: -1
 });
 
-//------Pasto (hojas en forma de cono sobre el piso, independiente)------
-// El piso del escaparate está en y = -2 y mide 4 (ancho) x 3 (fondo)
+//------Pasto------
 const pastoPisoY = -2;
 const pastoMargenX = 0.05;       // margen respecto a las paredes laterales (evita que se corten)
 const pastoMargenZ = 0.05;       // margen respecto a la pared del fondo
@@ -550,10 +539,10 @@ const pastoAlturaMax = 0.4;      // altura máxima de una hoja
 const pastoAncho = 0.04;         // radio de la base de cada hoja
 const pastoInclinacion = 0.25;   // cuánto se inclina cada hoja al azar (radianes)
 
-// Tonos de verde (de oscuro a claro): cada hoja toma uno al azar
+// Tonos de verde (azar)
 const pastoColores = ['#2f7a35', '#3f8f3f', '#52a43e', '#6dbb45', '#8acb55'];
 
-// Una sola geometría de cono con la base en y = 0, escalada por hoja con la matriz
+// Geometría
 const pastoGeo = new THREE.ConeGeometry(pastoAncho, 1, 4);
 pastoGeo.translate(0, 0.5, 0);
 
@@ -611,8 +600,8 @@ for (let g = 0; g < pastoGrupos; g++) {
 }
 console.log("Pasto");
 
-//------Animación del pasto (brisa suave: cada grupo se mece a su ritmo)------
-const pastoBalanceo = 0.03;      // cuánto se inclina el grupo (radianes). 0 = sin movimiento
+//Animación del pasto
+const pastoBalanceo = 0.03;      // cuánto se inclina el grupo (radianes)
 const pastoDuracionBase = 2.2;   // segundos que tarda cada vaivén (cada grupo varía un poco)
 
 pastoListaGrupos.forEach((pastoGrupo, i) => {
@@ -627,11 +616,11 @@ pastoListaGrupos.forEach((pastoGrupo, i) => {
     });
 });
 
-//------Destello del escudo (solo resplandor difuso, sin líneas)------
+//------Destello del escudo------
 const destelloGrupo = new THREE.Group();
 scene.add(destelloGrupo);
 
-// Posición: centro del escudo, un poco DETRÁS de él para que el brillo "salga" del escudo
+// Posición
 const destelloX = 0;
 const destelloY = 0.5;
 const destelloZ = -0.85 + adelanto;
@@ -644,7 +633,7 @@ const destelloPulso = 0.12;          // cuánto crece en cada latido (0.12 = 12%
 const destelloOpacidadMin = 0.55;    // brillo mínimo del latido (0 a 1)
 const destelloOpacidadMax = 1;       // brillo máximo del latido (0 a 1)
 
-// Textura del resplandor: degradado radial dorado que se desvanece suavemente
+// Textura del resplandor
 function crearTexturaResplandor() {
     const lienzo = document.createElement('canvas');
     lienzo.width = 512;
@@ -663,7 +652,7 @@ function crearTexturaResplandor() {
     return new THREE.CanvasTexture(lienzo);
 }
 
-// Mezcla normal (no aditiva) para que el dorado se vea sobre el fondo azul claro
+// Mezcla normal para que el dorado se vea sobre el fondo azul claro
 const destelloMat = new THREE.SpriteMaterial({
     map: crearTexturaResplandor(),
     transparent: true,
@@ -675,7 +664,7 @@ destelloSprite.scale.set(destelloTamano * (1 - destelloPulso), destelloTamano * 
 destelloGrupo.add(destelloSprite);
 console.log("Destello");
 
-//------Animación del destello (late: crece y se ilumina, luego se achica y baja)------
+//Animación del destello
 gsap.to(destelloSprite.scale, {
     x: destelloTamano * (1 + destelloPulso),
     y: destelloTamano * (1 + destelloPulso),
