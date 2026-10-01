@@ -474,7 +474,7 @@ scene.add(nube4Grupo);
 // Posición y tamaño
 const nube4X = 0;
 const nube4Y = 1.6;
-const nube4Z = -1.35 <
+const nube4Z = -1.35;
 nube4Grupo.position.set(nube4X - 1.2, nube4Y - 0.04, nube4Z); // arranca en el extremo izquierdo
 nube4Grupo.scale.setScalar(0.55);
 
@@ -623,7 +623,7 @@ scene.add(destelloGrupo);
 // Posición
 const destelloX = 0;
 const destelloY = 0.5;
-const destelloZ = -0.85 + adelanto;
+const destelloZ = -0.85;
 destelloGrupo.position.set(destelloX, destelloY, destelloZ);
 
 // Configuración
