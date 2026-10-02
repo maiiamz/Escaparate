@@ -17,6 +17,8 @@ camera.position.z = 5;
 const renderer = new THREE.WebGLRenderer({antialias: true});
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.shadowMap.enabled = true;                  // activa las sombras
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;   // bordes suaves
 canvas.appendChild(renderer.domElement);
 
 //--Controles de orbita--
@@ -40,6 +42,23 @@ scene.add(luzAmbiente);
 const luzDireccional = new THREE.DirectionalLight(0xffffff, 2);
 luzDireccional.position.set(0, 2, 7);
 scene.add(luzDireccional);
+
+//------Configuración de sombras------
+const sombraResolucion = 2048;   // calidad de la sombra (1024 = más ligero, 4096 = más nítido)
+const sombraOpacidad = 0.35;     // qué tan oscura se ve la sombra (0 a 1)
+
+luzDireccional.castShadow = true;
+luzDireccional.shadow.mapSize.set(sombraResolucion, sombraResolucion);
+luzDireccional.shadow.camera.left = -5;     // área que cubre la sombra (cubre todo el escaparate)
+luzDireccional.shadow.camera.right = 5;
+luzDireccional.shadow.camera.top = 4;
+luzDireccional.shadow.camera.bottom = -4;
+luzDireccional.shadow.camera.near = 0.5;
+luzDireccional.shadow.camera.far = 15;
+luzDireccional.shadow.bias = -0.0005;       // evita rayas en las superficies
+luzDireccional.shadow.normalBias = 0.02;
+luzDireccional.shadow.radius = 4;           // suavidad del borde de la sombra
+luzDireccional.shadow.camera.updateProjectionMatrix();
 
 
 //------Escaparate-------
@@ -72,6 +91,27 @@ const escaparate = new THREE.Mesh(escaparateGeo, escaparateMat);
 scene.add(escaparate);
 console.log("escaparate");
 
+//------Planos receptores de sombra (invisibles, solo muestran la sombra)------
+const sombraMat = new THREE.ShadowMaterial({
+    opacity: sombraOpacidad,
+    polygonOffset: true,         // evita parpadeo con la superficie de abajo
+    polygonOffsetFactor: -1,
+    polygonOffsetUnits: -1
+});
+
+// Pared del fondo
+const sombraPared = new THREE.Mesh(new THREE.PlaneGeometry(ancho, alto), sombraMat);
+sombraPared.position.set(0, 0, -fondo / 2 + 0.002);
+sombraPared.receiveShadow = true;
+scene.add(sombraPared);
+
+// Piso
+const sombraPiso = new THREE.Mesh(new THREE.PlaneGeometry(ancho, fondo), sombraMat);
+sombraPiso.rotation.x = -Math.PI / 2;
+sombraPiso.position.set(0, -alto / 2 + 0.002, 0);
+sombraPiso.receiveShadow = true;
+scene.add(sombraPiso);
+
 
 //------Escudo------
 const escudoGrupo = new THREE.Group();
@@ -100,10 +140,12 @@ loader.load(
     (gltf) => {
         const modeloEscudo = gltf.scene;
 
-        // Aplicar el material a todas las mallas del modelo
+        // Aplicar el material y las sombras a todas las mallas del modelo
         modeloEscudo.traverse((hijo) => {
             if (hijo.isMesh) {
                 hijo.material = escudoMat;
+                hijo.castShadow = true;
+                hijo.receiveShadow = true;
             }
         });
 
@@ -169,10 +211,12 @@ espada1loader.load(
     (gltf) => {
         const modeloEspada1 = gltf.scene;
 
-        // Aplicar el material a todas las mallas del modelo
+        // Aplicar el material y las sombras a todas las mallas del modelo
         modeloEspada1.traverse((hijo) => {
             if (hijo.isMesh) {
                 hijo.material = espada1Mat;
+                hijo.castShadow = true;
+                hijo.receiveShadow = true;
             }
         });
 
@@ -260,10 +304,12 @@ espada2loader.load(
     (gltf) => {
         const modeloEspada2 = gltf.scene;
 
-        // Aplicar el material a todas las mallas del modelo
+        // Aplicar el material y las sombras a todas las mallas del modelo
         modeloEspada2.traverse((hijo) => {
             if (hijo.isMesh) {
                 hijo.material = espada2Mat;
+                hijo.castShadow = true;
+                hijo.receiveShadow = true;
             }
         });
 
@@ -352,6 +398,8 @@ nubeBolas.forEach(([x, y, z, radio]) => {
     const bola = new THREE.Mesh(nubeGeo, nubeMat);
     bola.position.set(x, y, z);
     bola.scale.setScalar(radio);
+    bola.castShadow = true;
+    bola.receiveShadow = true;
     nubeGrupo.add(bola);
 });
 console.log("Nube 1");
@@ -402,6 +450,8 @@ nube2Bolas.forEach(([x, y, z, radio]) => {
     const bola = new THREE.Mesh(nube2Geo, nube2Mat);
     bola.position.set(x, y, z);
     bola.scale.setScalar(radio);
+    bola.castShadow = true;
+    bola.receiveShadow = true;
     nube2Grupo.add(bola);
 });
 console.log("Nube 2");
@@ -453,6 +503,8 @@ nube3Bolas.forEach(([x, y, z, radio]) => {
     const bola = new THREE.Mesh(nube3Geo, nube3Mat);
     bola.position.set(x, y, z);
     bola.scale.setScalar(radio);
+    bola.castShadow = true;
+    bola.receiveShadow = true;
     nube3Grupo.add(bola);
 });
 console.log("Nube 3");
@@ -505,6 +557,8 @@ nube4Bolas.forEach(([x, y, z, radio]) => {
     const bola = new THREE.Mesh(nube4Geo, nube4Mat);
     bola.position.set(x, y, z);
     bola.scale.setScalar(radio);
+    bola.castShadow = true;
+    bola.receiveShadow = true;
     nube4Grupo.add(bola);
 });
 console.log("Nube 4");
@@ -557,6 +611,8 @@ for (let g = 0; g < pastoGrupos; g++) {
     scene.add(pastoGrupo);
 
     const hojas = new THREE.InstancedMesh(pastoGeo, pastoMat, pastoHojasPorGrupo);
+    hojas.castShadow = true;
+    hojas.receiveShadow = true;
     const matriz = new THREE.Matrix4();
     const posicion = new THREE.Vector3();
     const rotacion = new THREE.Quaternion();
