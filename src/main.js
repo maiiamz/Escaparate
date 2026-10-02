@@ -22,10 +22,10 @@ const renderer = new THREE.WebGLRenderer({antialias: true, powerPreference: 'hig
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, pixelRatioMax));
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.shadowMap.enabled = true;              // activa las sombras
-renderer.shadowMap.type = THREE.PCFShadowMap;   // bordes suaves (PCFSoftShadowMap ya fue removido)
+renderer.shadowMap.type = THREE.PCFShadowMap;   // bordes suaves 
 canvas.appendChild(renderer.domElement);
 
-//--Contador de FPS (bórralo cuando termines de optimizar)--
+//--Contador de FPS 
 const stats = new Stats();
 stats.showPanel(0);   // 0 = FPS, 1 = ms por frame, 2 = memoria
 document.body.appendChild(stats.dom);
@@ -58,7 +58,7 @@ const sombraOpacidad = 0.35;     // qué tan oscura se ve la sombra (0 a 1)
 
 luzDireccional.castShadow = true;
 luzDireccional.shadow.mapSize.set(sombraResolucion, sombraResolucion);
-luzDireccional.shadow.camera.left = -3.5;   // área que cubre la sombra (ajustada al tamaño del escaparate)
+luzDireccional.shadow.camera.left = -3.5;   // área que cubre la sombra 
 luzDireccional.shadow.camera.right = 3.5;
 luzDireccional.shadow.camera.top = 3;
 luzDireccional.shadow.camera.bottom = -3;
@@ -79,8 +79,7 @@ const fondo = 3; //profundidad del escaparate
 const escaparateGeo = new THREE.BoxGeometry(ancho, alto, fondo); 
 console.log("escaparateGeo");
 
-//------Textura del piso (rocky_terrain_02 de Poly Haven, versión 2K)------
-// Carpeta donde están los archivos dentro de public/ (se pide con "/" al inicio, sin "public")
+//------Textura del piso------
 const pisoCarpeta = '/texturas/textures/';
 
 const pisoRepeticionX = 3;       // veces que se repite la textura a lo ancho
@@ -125,7 +124,7 @@ function cargarMapaPiso(nombre, alCargar) {
     intentar(0);
 }
 
-// Material del piso: arranca solo con el color y se completa cuando cargan las texturas
+// Material del piso
 const pisoMat = new THREE.MeshStandardMaterial({
     color: '#ffffff',
     roughness: pisoRugosidad,
@@ -174,11 +173,11 @@ const escaparateMat = [
 ];
 
 const escaparate = new THREE.Mesh(escaparateGeo, escaparateMat);
-escaparate.receiveShadow = true;   // el piso (material estándar) recibe las sombras directamente
+escaparate.receiveShadow = true;   // el piso recibe las sombras directamente
 scene.add(escaparate);
 console.log("escaparate");
 
-//------Planos receptores de sombra (invisibles, solo muestran la sombra)------
+//------Planos receptores de sombra------
 const sombraMat = new THREE.ShadowMaterial({
     opacity: sombraOpacidad,
     polygonOffset: true,         // evita parpadeo con la superficie de abajo
@@ -191,14 +190,6 @@ const sombraPared = new THREE.Mesh(new THREE.PlaneGeometry(ancho, alto), sombraM
 sombraPared.position.set(0, 0, -fondo / 2 + 0.002);
 sombraPared.receiveShadow = true;
 scene.add(sombraPared);
-
-// Piso: ya no hace falta el plano, el piso con textura recibe las sombras por sí mismo
-// (si lo activas se oscurece doble)
-// const sombraPiso = new THREE.Mesh(new THREE.PlaneGeometry(ancho, fondo), sombraMat);
-// sombraPiso.rotation.x = -Math.PI / 2;
-// sombraPiso.position.set(0, -alto / 2 + 0.002, 0);
-// sombraPiso.receiveShadow = true;
-// scene.add(sombraPiso);
 
 
 //------Escudo------
@@ -346,7 +337,7 @@ espada1loader.load(
     }
 );
 
-//------Animación de la espada 1 ------
+//Animación de la espada 1
 espada1Pivote.rotation.x = espada1AnguloBase - espada1AnguloSwing; // posición inicial
 
 gsap.to(espada1Pivote.rotation, {
@@ -439,7 +430,7 @@ espada2loader.load(
     }
 );
 
-//------Animación de la espada 2------
+//Animación de la espada 2
 espada2Pivote.rotation.x = espada2AnguloBase + espada2AnguloSwing; // posición inicial
 
 gsap.to(espada2Pivote.rotation, {
@@ -492,7 +483,7 @@ nubeBolas.forEach(([x, y, z, radio]) => {
 });
 console.log("Nube 1");
 
-//------Animación de la nube 1 ------
+//Animación de la nube 1
 gsap.to(nubeGrupo.position, {
     y: nubeY + nubeAmplitud,
     duration: nubeDuracion,
@@ -827,8 +818,7 @@ gsap.to(destelloMat, {
     repeat: -1
 });
 
-//------Giro del escudo al hacer clic------
-// Al picarle al escudo da vueltas rápidas, va frenando y vuelve a su giro normal
+//------Giro del escudo al hacer click------
 const clicVueltas = 3;               // vueltas extra que da con cada clic
 const clicDuracion = 2;              // segundos que dura el giro
 const clicEase = "power3.out";       // arranca muy rápido y va frenando suave
@@ -889,13 +879,13 @@ renderer.domElement.addEventListener('pointermove', (e) => {
     renderer.domElement.style.cursor = mouseSobreEscudo(e) ? 'pointer' : 'default';
 });
 
-//------Hover del escudo (se agranda al pasar el mouse)------
-const hoverAgrandar = 1.12;          // cuánto crece (1.12 = 12% más grande)
+//------Hover del escudo------
+const hoverAgrandar = 1.30;          // cuánto crece
 const hoverDuracion = 0.35;          // segundos que tarda en crecer o regresar
 const hoverEaseEntrada = "power2.out";   // al entrar: arranca rápido y suaviza
 const hoverEaseSalida = "power2.inOut";  // al salir: regreso suave
 
-const hoverEscalaBase = escudoGrupo.scale.x;   // tamaño normal del escudo (se toma del que ya tiene)
+const hoverEscalaBase = escudoGrupo.scale.x;   // tamaño normal del escudo 
 let escudoHover = false;
 
 // Anima el tamaño del escudo hacia el valor indicado
@@ -924,6 +914,161 @@ renderer.domElement.addEventListener('pointerleave', () => {
     escudoHover = false;
     escalarEscudo(1, hoverEaseSalida);
 });
+
+//------Choque de espadas con la barra espaciadora------
+const choqueAnticipacion = Math.PI * 0.85;   // ángulo de la espada 1 al echarse hacia atrás (la 2 usa el negativo)
+const choqueGolpe = Math.PI * 0.62;          // ángulo al golpear (más bajo = se cruzan más)
+const choqueDuracionAnticipacion = 0.28;     // segundos que tarda en echarse hacia atrás
+const choqueDuracionGolpe = 0.14;            // segundos del golpe (corto = más violento)
+const choqueDuracionRebote = 0.9;            // segundos que tarda en volver al balanceo normal
+const choqueEaseRebote = "elastic.out(1, 0.45)";   // rebote con vibración al volver
+
+// Chispa del impacto
+const choqueChispaX = 0;             // dónde aparece la chispa (cruce de las espadas)
+const choqueChispaY = 0.3;
+const choqueChispaZ = -0.2;          // un poco al frente de las espadas
+const choqueChispaTamano = 1.6;      // tamaño máximo de la chispa
+const choqueChispaDuracion = 0.45;   // segundos que dura la chispa
+
+// Vibración del escudo al recibir el golpe
+const choqueVibracion = 0.05;        // cuánto se mueve (unidades)
+const choqueEscudoYBase = escudoGrupo.position.y;
+
+// Letrero de ayuda en pantalla
+const choqueMostrarAyuda = true;
+const choqueTecla = 'Space';
+
+// Textura de la chispa: núcleo blanco, brillo dorado y 4 rayos
+function crearTexturaChoque() {
+    const lienzo = document.createElement('canvas');
+    lienzo.width = 256;
+    lienzo.height = 256;
+    const ctx = lienzo.getContext('2d');
+    const c = 128;
+
+    const brillo = ctx.createRadialGradient(c, c, 0, c, c, 110);
+    brillo.addColorStop(0, 'rgba(255,255,255,1)');
+    brillo.addColorStop(0.2, 'rgba(255,245,170,0.9)');
+    brillo.addColorStop(0.6, 'rgba(255,200,60,0.3)');
+    brillo.addColorStop(1, 'rgba(255,190,40,0)');
+    ctx.fillStyle = brillo;
+    ctx.fillRect(0, 0, 256, 256);
+
+    const rayo = (horizontal) => {
+        ctx.save();
+        ctx.translate(c, c);
+        if (!horizontal) ctx.rotate(Math.PI / 2);
+        ctx.beginPath();
+        ctx.moveTo(-125, 0);
+        ctx.quadraticCurveTo(0, -9, 125, 0);
+        ctx.quadraticCurveTo(0, 9, -125, 0);
+        const g = ctx.createLinearGradient(-125, 0, 125, 0);
+        g.addColorStop(0, 'rgba(255,255,255,0)');
+        g.addColorStop(0.5, 'rgba(255,255,255,1)');
+        g.addColorStop(1, 'rgba(255,255,255,0)');
+        ctx.fillStyle = g;
+        ctx.fill();
+        ctx.restore();
+    };
+    rayo(true);
+    rayo(false);
+
+    return new THREE.CanvasTexture(lienzo);
+}
+
+const choqueChispaMat = new THREE.SpriteMaterial({
+    map: crearTexturaChoque(),
+    transparent: true,
+    opacity: 0,
+    depthWrite: false
+});
+const choqueChispa = new THREE.Sprite(choqueChispaMat);
+choqueChispa.position.set(choqueChispaX, choqueChispaY, choqueChispaZ);
+choqueChispa.scale.set(0, 0, 1);
+scene.add(choqueChispa);
+
+let choqueEnCurso = false;
+
+// Destello y vibración del impacto
+function choqueImpacto() {
+    // Chispa: aparece grande de golpe, gira un poco y se desvanece
+    choqueChispaMat.rotation = 0;
+    gsap.fromTo(choqueChispa.scale,
+        { x: choqueChispaTamano * 0.3, y: choqueChispaTamano * 0.3 },
+        { x: choqueChispaTamano, y: choqueChispaTamano, duration: choqueChispaDuracion, ease: "power3.out" }
+    );
+    gsap.fromTo(choqueChispaMat,
+        { opacity: 1, rotation: 0 },
+        { opacity: 0, rotation: Math.PI / 4, duration: choqueChispaDuracion, ease: "power2.in" }
+    );
+
+    // Vibración del escudo
+    gsap.to(escudoGrupo.position, {
+        y: choqueEscudoYBase + choqueVibracion,
+        duration: 0.04,
+        yoyo: true,
+        repeat: 7,
+        ease: "none",
+        onComplete: () => { escudoGrupo.position.y = choqueEscudoYBase; }
+    });
+}
+
+function chocarEspadas() {
+    if (choqueEnCurso) return;   // evita que se empalmen varios choques
+    choqueEnCurso = true;
+
+    // Pausa el balanceo normal de cada espada y recuerda en qué ángulo estaba
+    const tweensEspada1 = gsap.getTweensOf(espada1Pivote.rotation);
+    const tweensEspada2 = gsap.getTweensOf(espada2Pivote.rotation);
+    tweensEspada1.forEach((t) => t.pause());
+    tweensEspada2.forEach((t) => t.pause());
+    const angulo1 = espada1Pivote.rotation.x;
+    const angulo2 = espada2Pivote.rotation.x;
+
+    const tl = gsap.timeline({
+        onComplete: () => {
+            // Reanuda el balanceo desde el mismo ángulo en que se pausó
+            tweensEspada1.forEach((t) => t.resume());
+            tweensEspada2.forEach((t) => t.resume());
+            choqueEnCurso = false;
+        }
+    });
+
+    // 1) Anticipación: las dos se echan hacia atrás
+    tl.to(espada1Pivote.rotation, { x: choqueAnticipacion, duration: choqueDuracionAnticipacion, ease: "power2.out" }, 0)
+      .to(espada2Pivote.rotation, { x: -choqueAnticipacion, duration: choqueDuracionAnticipacion, ease: "power2.out" }, 0);
+
+    // 2) Golpe: se cruzan rápido
+    tl.addLabel("golpe")
+      .to(espada1Pivote.rotation, { x: choqueGolpe, duration: choqueDuracionGolpe, ease: "power4.in" }, "golpe")
+      .to(espada2Pivote.rotation, { x: -choqueGolpe, duration: choqueDuracionGolpe, ease: "power4.in" }, "golpe");
+
+    // 3) Impacto: chispa y vibración del escudo
+    tl.addLabel("impacto")
+      .call(choqueImpacto, null, "impacto");
+
+    // 4) Rebote: vuelven al ángulo donde estaban
+    tl.to(espada1Pivote.rotation, { x: angulo1, duration: choqueDuracionRebote, ease: choqueEaseRebote }, "impacto")
+      .to(espada2Pivote.rotation, { x: angulo2, duration: choqueDuracionRebote, ease: choqueEaseRebote }, "impacto");
+}
+
+// Barra espaciadora (ignora si la tecla se mantiene presionada)
+window.addEventListener('keydown', (e) => {
+    if (e.code !== choqueTecla) return;
+    e.preventDefault();          // evita que la página haga scroll
+    if (e.repeat) return;
+    chocarEspadas();
+});
+
+// Letrero de ayuda
+if (choqueMostrarAyuda) {
+    const ayuda = document.createElement('div');
+    ayuda.textContent = 'Espacio: chocar espadas';
+    ayuda.style.cssText = 'position:fixed;bottom:16px;left:50%;transform:translateX(-50%);' +
+        'padding:8px 16px;border-radius:999px;background:rgba(0,0,0,0.55);color:#fff;' +
+        'font:14px sans-serif;pointer-events:none;user-select:none;';
+    document.body.appendChild(ayuda);
+}
 
 //--Renderizar la escena--
 function animate() {
