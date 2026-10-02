@@ -80,7 +80,7 @@ const fondo = 3; //profundidad del escaparate
 const escaparateGeo = new THREE.BoxGeometry(ancho, alto, fondo); 
 console.log("escaparateGeo");
 
-//------Textura del piso------
+//------Texturas (piso y paredes laterales)------
 const pisoCarpeta = '/texturas/textures/';
 
 const pisoRepeticionX = 3;       // veces que se repite la textura a lo ancho
@@ -95,27 +95,28 @@ const texLoader = new THREE.TextureLoader();
 const exrLoader = new EXRLoader();
 const anisotropia = Math.min(renderer.capabilities.getMaxAnisotropy(), 4);   // 4 es suficiente y más ligero
 
-// Repetir la textura y nitidez en ángulos
-function configurarTextura(tex) {
+// Repetir la textura y nitidez en ángulos (por defecto usa la repetición del piso)
+function configurarTextura(tex, repX = pisoRepeticionX, repY = pisoRepeticionY) {
     tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-    tex.repeat.set(pisoRepeticionX, pisoRepeticionY);
+    tex.repeat.set(repX, repY);
     tex.anisotropy = anisotropia;
     tex.needsUpdate = true;
 }
 
 // Carga un mapa probando cada extensión hasta que una funcione
-function cargarMapaPiso(nombre, alCargar) {
+// (se puede pasar una lista propia de extensiones para evitar intentos fallidos)
+function cargarMapaPiso(nombre, alCargar, extensiones = pisoExtensiones) {
     const intentar = (i) => {
-        if (i >= pisoExtensiones.length) {
-            console.error("No se encontró el mapa del piso:", pisoCarpeta + nombre, "(probé", pisoExtensiones.join(', ') + ")");
+        if (i >= extensiones.length) {
+            console.error("No se encontró el mapa:", pisoCarpeta + nombre, "(probé", extensiones.join(', ') + ")");
             return;
         }
-        const ext = pisoExtensiones[i];
+        const ext = extensiones[i];
         const cargador = (ext === '.exr') ? exrLoader : texLoader;
         cargador.load(
             pisoCarpeta + nombre + ext,
             (tex) => {
-                console.log("Piso:", nombre + ext, "cargado");
+                console.log("Textura:", nombre + ext, "cargada");
                 alCargar(tex);
             },
             undefined,
@@ -156,9 +157,51 @@ cargarMapaPiso('rocky_terrain_02_rough_2k', (tex) => {
     pisoMat.needsUpdate = true;
 });
 
+//------Textura de las paredes laterales (mossy_brick de Poly Haven)------
+const paredRepeticionX = 1.5;    // veces que se repite a lo largo de la pared (profundidad)
+const paredRepeticionY = 2;      // veces que se repite a lo alto
+const paredRelieve = 1;          // intensidad del relieve (normal map). 0 = plano
+const paredRugosidad = 1;        // multiplicador de la rugosidad (0 = brillante, 1 = mate)
+const paredBrillo = 0.25;        // brillo propio del ladrillo (0 = solo luz de la escena, sube si se ve muy oscuro)
+
+// Material compartido por la pared derecha e izquierda
+const paredMat = new THREE.MeshStandardMaterial({
+    color: '#ffffff',
+    roughness: paredRugosidad,
+    metalness: 0,
+    side: THREE.DoubleSide
+});
+
+// Color (jpg)
+cargarMapaPiso('mossy_brick_diff_2k', (tex) => {
+    tex.colorSpace = THREE.SRGBColorSpace;   // solo el mapa de color lleva esto
+    configurarTextura(tex, paredRepeticionX, paredRepeticionY);
+    paredMat.map = tex;
+    // Brillo propio: reutiliza la misma textura para que el ladrillo no se pierda en la sombra
+    paredMat.emissive = new THREE.Color('#ffffff');
+    paredMat.emissiveMap = tex;
+    paredMat.emissiveIntensity = paredBrillo;
+    paredMat.needsUpdate = true;
+}, ['.jpg']);
+
+// Normal (relieve, exr)
+cargarMapaPiso('mossy_brick_nor_gl_2k', (tex) => {
+    configurarTextura(tex, paredRepeticionX, paredRepeticionY);
+    paredMat.normalMap = tex;
+    paredMat.normalScale.set(paredRelieve, paredRelieve);
+    paredMat.needsUpdate = true;
+}, ['.exr']);
+
+// Rugosidad (exr)
+cargarMapaPiso('mossy_brick_rough_2k', (tex) => {
+    configurarTextura(tex, paredRepeticionX, paredRepeticionY);
+    paredMat.roughnessMap = tex;
+    paredMat.needsUpdate = true;
+}, ['.exr']);
+
 //materiales 
-const derecha   = new THREE.MeshBasicMaterial({color: "#75bde4", side: THREE.DoubleSide});
-const izquierda = new THREE.MeshBasicMaterial({color: "#75bde4", side: THREE.DoubleSide});
+const derecha   = paredMat;   // pared lateral con ladrillo musgoso
+const izquierda = paredMat;   // misma textura en la pared izquierda
 const abajo     = pisoMat;   // el piso usa la textura rocosa
 const atras     = new THREE.MeshBasicMaterial({color: "#94cbf5", side: THREE.DoubleSide});
 const oculto    = new THREE.MeshBasicMaterial({visible: false});
@@ -174,7 +217,7 @@ const escaparateMat = [
 ];
 
 const escaparate = new THREE.Mesh(escaparateGeo, escaparateMat);
-escaparate.receiveShadow = true;   // el piso recibe las sombras directamente
+escaparate.receiveShadow = true;   // el piso y las paredes (material estándar) reciben las sombras directamente
 scene.add(escaparate);
 console.log("escaparate");
 
@@ -755,7 +798,7 @@ pastoListaGrupos.forEach((pastoGrupo, i) => {
 
 //------Gema de cristal------
 const gemaX = -2.5;
-const gemaY = -0.6;             // altura base (el piso está en y = -2)
+const gemaY = -0.6;             // altura base
 const gemaZ = 0.5;
 const gemaRadio = 0.50;
 const gemaAlargar = 3;         // qué tan alta es respecto a su ancho
@@ -766,7 +809,7 @@ const gemaFloteDuracion = 2.2;   // segundos de cada subida o bajada
 // Ajustes del cristal
 const gemaIor = 2.0;                 // índice de refracción (1.5 = vidrio, 2.0 = diamante)
 const gemaGrosor = 0.8;              // grosor para la refracción (más alto = más deformación)
-const gemaDispersion = 0.4;          // separación de colores en los bordes (0 = ninguna)
+const gemaDispersion = 0;          // separación de colores en los bordes (0 = ninguna)
 const gemaReflejos = 2.5;            // intensidad de los reflejos del entorno
 const gemaColorInterior = '#2fc8ff'; // tinte del cristal al atravesarlo
 const gemaNucleo = true;             // pequeño cristal brillante en el interior
@@ -840,7 +883,7 @@ const gema2FloteDuracion = 2.2;  // segundos de cada subida o bajada
 // Ajustes del cristal
 const gema2Ior = 2.0;                 // índice de refracción (1.5 = vidrio, 2.0 = diamante)
 const gema2Grosor = 0.8;              // grosor para la refracción (más alto = más deformación)
-const gema2Dispersion = 0.4;          // separación de colores en los bordes (0 = ninguna)
+const gema2Dispersion = 0;          // separación de colores en los bordes (0 = ninguna)
 const gema2Reflejos = 2.5;            // intensidad de los reflejos del entorno
 const gema2ColorInterior = '#2fc8ff'; // tinte del cristal al atravesarlo
 const gema2Nucleo = true;             // pequeño cristal brillante en el interior
