@@ -1,7 +1,9 @@
 import * as THREE from 'three';
 import gsap from 'gsap';
+import Stats from 'three/addons/libs/stats.module.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { EXRLoader } from 'three/addons/loaders/EXRLoader.js';
 
 //--Canvas--
 const canvas = document.querySelector('#scene');
@@ -14,12 +16,19 @@ camera.position.y = 0;
 camera.position.z = 5;
 
 //--Configuración de render--
-const renderer = new THREE.WebGLRenderer({antialias: true});
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+const pixelRatioMax = 1.5;   // límite de resolución (1 = más rápido, 2 = más nítido)
+
+const renderer = new THREE.WebGLRenderer({antialias: true, powerPreference: 'high-performance'});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, pixelRatioMax));
 renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.shadowMap.enabled = true;                  // activa las sombras
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;   // bordes suaves
+renderer.shadowMap.enabled = true;              // activa las sombras
+renderer.shadowMap.type = THREE.PCFShadowMap;   // bordes suaves (PCFSoftShadowMap ya fue removido)
 canvas.appendChild(renderer.domElement);
+
+//--Contador de FPS (bórralo cuando termines de optimizar)--
+const stats = new Stats();
+stats.showPanel(0);   // 0 = FPS, 1 = ms por frame, 2 = memoria
+document.body.appendChild(stats.dom);
 
 //--Controles de orbita--
 const controls = new OrbitControls(camera, renderer.domElement);
@@ -44,15 +53,15 @@ luzDireccional.position.set(0, 2, 7);
 scene.add(luzDireccional);
 
 //------Configuración de sombras------
-const sombraResolucion = 2048;   // calidad de la sombra (1024 = más ligero, 4096 = más nítido)
+const sombraResolucion = 1024;   // calidad de la sombra (1024 = rápido, 2048 = más nítido, 4096 = pesado)
 const sombraOpacidad = 0.35;     // qué tan oscura se ve la sombra (0 a 1)
 
 luzDireccional.castShadow = true;
 luzDireccional.shadow.mapSize.set(sombraResolucion, sombraResolucion);
-luzDireccional.shadow.camera.left = -5;     // área que cubre la sombra (cubre todo el escaparate)
-luzDireccional.shadow.camera.right = 5;
-luzDireccional.shadow.camera.top = 4;
-luzDireccional.shadow.camera.bottom = -4;
+luzDireccional.shadow.camera.left = -3.5;   // área que cubre la sombra (ajustada al tamaño del escaparate)
+luzDireccional.shadow.camera.right = 3.5;
+luzDireccional.shadow.camera.top = 3;
+luzDireccional.shadow.camera.bottom = -3;
 luzDireccional.shadow.camera.near = 0.5;
 luzDireccional.shadow.camera.far = 15;
 luzDireccional.shadow.bias = -0.0005;       // evita rayas en las superficies
@@ -70,10 +79,87 @@ const fondo = 3; //profundidad del escaparate
 const escaparateGeo = new THREE.BoxGeometry(ancho, alto, fondo); 
 console.log("escaparateGeo");
 
+//------Textura del piso (rocky_terrain_02 de Poly Haven, versión 2K)------
+// Carpeta donde están los archivos dentro de public/ (se pide con "/" al inicio, sin "public")
+const pisoCarpeta = '/texturas/textures/';
+
+const pisoRepeticionX = 3;       // veces que se repite la textura a lo ancho
+const pisoRepeticionY = 1.5;     // veces que se repite a lo fondo
+const pisoRelieve = 1;           // intensidad del relieve (normal map). 0 = plano
+const pisoRugosidad = 1;         // multiplicador de la rugosidad (0 = brillante, 1 = mate)
+
+// Extensiones que se prueban en orden para cada mapa (usa la primera que exista)
+const pisoExtensiones = ['.png', '.jpg', '.exr'];
+
+const texLoader = new THREE.TextureLoader();
+const exrLoader = new EXRLoader();
+const anisotropia = Math.min(renderer.capabilities.getMaxAnisotropy(), 4);   // 4 es suficiente y más ligero
+
+// Repetir la textura y nitidez en ángulos
+function configurarTextura(tex) {
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(pisoRepeticionX, pisoRepeticionY);
+    tex.anisotropy = anisotropia;
+    tex.needsUpdate = true;
+}
+
+// Carga un mapa probando cada extensión hasta que una funcione
+function cargarMapaPiso(nombre, alCargar) {
+    const intentar = (i) => {
+        if (i >= pisoExtensiones.length) {
+            console.error("No se encontró el mapa del piso:", pisoCarpeta + nombre, "(probé", pisoExtensiones.join(', ') + ")");
+            return;
+        }
+        const ext = pisoExtensiones[i];
+        const cargador = (ext === '.exr') ? exrLoader : texLoader;
+        cargador.load(
+            pisoCarpeta + nombre + ext,
+            (tex) => {
+                console.log("Piso:", nombre + ext, "cargado");
+                alCargar(tex);
+            },
+            undefined,
+            () => intentar(i + 1)   // si falla, prueba la siguiente extensión
+        );
+    };
+    intentar(0);
+}
+
+// Material del piso: arranca solo con el color y se completa cuando cargan las texturas
+const pisoMat = new THREE.MeshStandardMaterial({
+    color: '#ffffff',
+    roughness: pisoRugosidad,
+    metalness: 0,
+    side: THREE.DoubleSide
+});
+
+// Color
+cargarMapaPiso('rocky_terrain_02_diff_2k', (tex) => {
+    tex.colorSpace = THREE.SRGBColorSpace;   // solo el mapa de color lleva esto
+    configurarTextura(tex);
+    pisoMat.map = tex;
+    pisoMat.needsUpdate = true;
+});
+
+// Normal (relieve)
+cargarMapaPiso('rocky_terrain_02_nor_gl_2k', (tex) => {
+    configurarTextura(tex);
+    pisoMat.normalMap = tex;
+    pisoMat.normalScale.set(pisoRelieve, pisoRelieve);
+    pisoMat.needsUpdate = true;
+});
+
+// Rugosidad
+cargarMapaPiso('rocky_terrain_02_rough_2k', (tex) => {
+    configurarTextura(tex);
+    pisoMat.roughnessMap = tex;
+    pisoMat.needsUpdate = true;
+});
+
 //materiales 
 const derecha   = new THREE.MeshBasicMaterial({color: "#75bde4", side: THREE.DoubleSide});
 const izquierda = new THREE.MeshBasicMaterial({color: "#75bde4", side: THREE.DoubleSide});
-const abajo     = new THREE.MeshBasicMaterial({color: "#294934", side: THREE.DoubleSide});
+const abajo     = pisoMat;   // el piso usa la textura rocosa
 const atras     = new THREE.MeshBasicMaterial({color: "#94cbf5", side: THREE.DoubleSide});
 const oculto    = new THREE.MeshBasicMaterial({visible: false});
 
@@ -88,6 +174,7 @@ const escaparateMat = [
 ];
 
 const escaparate = new THREE.Mesh(escaparateGeo, escaparateMat);
+escaparate.receiveShadow = true;   // el piso (material estándar) recibe las sombras directamente
 scene.add(escaparate);
 console.log("escaparate");
 
@@ -105,12 +192,13 @@ sombraPared.position.set(0, 0, -fondo / 2 + 0.002);
 sombraPared.receiveShadow = true;
 scene.add(sombraPared);
 
-// Piso
-const sombraPiso = new THREE.Mesh(new THREE.PlaneGeometry(ancho, fondo), sombraMat);
-sombraPiso.rotation.x = -Math.PI / 2;
-sombraPiso.position.set(0, -alto / 2 + 0.002, 0);
-sombraPiso.receiveShadow = true;
-scene.add(sombraPiso);
+// Piso: ya no hace falta el plano, el piso con textura recibe las sombras por sí mismo
+// (si lo activas se oscurece doble)
+// const sombraPiso = new THREE.Mesh(new THREE.PlaneGeometry(ancho, fondo), sombraMat);
+// sombraPiso.rotation.x = -Math.PI / 2;
+// sombraPiso.position.set(0, -alto / 2 + 0.002, 0);
+// sombraPiso.receiveShadow = true;
+// scene.add(sombraPiso);
 
 
 //------Escudo------
@@ -391,8 +479,8 @@ const nubeBolas = [
     [ 0.70, -0.14, 0.00, 0.18],
 ];
 
-//Geometría
-const nubeGeo = new THREE.SphereGeometry(1, 24, 24);
+//Geometría (16 x 16 segmentos: se ve igual y pesa menos)
+const nubeGeo = new THREE.SphereGeometry(1, 16, 16);
 
 nubeBolas.forEach(([x, y, z, radio]) => {
     const bola = new THREE.Mesh(nubeGeo, nubeMat);
@@ -444,7 +532,7 @@ const nube2Bolas = [
 ];
 
 // Geometría
-const nube2Geo = new THREE.SphereGeometry(1, 24, 24);
+const nube2Geo = new THREE.SphereGeometry(1, 16, 16);
 
 nube2Bolas.forEach(([x, y, z, radio]) => {
     const bola = new THREE.Mesh(nube2Geo, nube2Mat);
@@ -497,7 +585,7 @@ const nube3Bolas = [
 ];
 
 //Geometría
-const nube3Geo = new THREE.SphereGeometry(1, 24, 24);
+const nube3Geo = new THREE.SphereGeometry(1, 16, 16);
 
 nube3Bolas.forEach(([x, y, z, radio]) => {
     const bola = new THREE.Mesh(nube3Geo, nube3Mat);
@@ -551,7 +639,7 @@ const nube4Bolas = [
 ];
 
 // Geometría
-const nube4Geo = new THREE.SphereGeometry(1, 24, 24);
+const nube4Geo = new THREE.SphereGeometry(1, 16, 16);
 
 nube4Bolas.forEach(([x, y, z, radio]) => {
     const bola = new THREE.Mesh(nube4Geo, nube4Mat);
@@ -592,6 +680,7 @@ const pastoAlturaMin = 0.15;     // altura mínima de una hoja (en unidades)
 const pastoAlturaMax = 0.4;      // altura máxima de una hoja
 const pastoAncho = 0.04;         // radio de la base de cada hoja
 const pastoInclinacion = 0.25;   // cuánto se inclina cada hoja al azar (radianes)
+const pastoSombras = false;      // false = el pasto no proyecta ni recibe sombras (mucho más rápido)
 
 // Tonos de verde (azar)
 const pastoColores = ['#2f7a35', '#3f8f3f', '#52a43e', '#6dbb45', '#8acb55'];
@@ -611,8 +700,8 @@ for (let g = 0; g < pastoGrupos; g++) {
     scene.add(pastoGrupo);
 
     const hojas = new THREE.InstancedMesh(pastoGeo, pastoMat, pastoHojasPorGrupo);
-    hojas.castShadow = true;
-    hojas.receiveShadow = true;
+    hojas.castShadow = pastoSombras;
+    hojas.receiveShadow = pastoSombras;
     const matriz = new THREE.Matrix4();
     const posicion = new THREE.Vector3();
     const rotacion = new THREE.Quaternion();
@@ -738,14 +827,116 @@ gsap.to(destelloMat, {
     repeat: -1
 });
 
+//------Giro del escudo al hacer clic------
+// Al picarle al escudo da vueltas rápidas, va frenando y vuelve a su giro normal
+const clicVueltas = 3;               // vueltas extra que da con cada clic
+const clicDuracion = 2;              // segundos que dura el giro
+const clicEase = "power3.out";       // arranca muy rápido y va frenando suave
+const clicUmbralArrastre = 5;        // píxeles: si el mouse se mueve más que esto, es arrastre (órbita), no clic
+
+const raycaster = new THREE.Raycaster();
+const puntero = new THREE.Vector2();
+let escudoGirando = false;
+let clicInicioX = 0;
+let clicInicioY = 0;
+
+// Revisa si el mouse está encima del escudo
+function mouseSobreEscudo(evento) {
+    const rect = renderer.domElement.getBoundingClientRect();
+    puntero.x = ((evento.clientX - rect.left) / rect.width) * 2 - 1;
+    puntero.y = -((evento.clientY - rect.top) / rect.height) * 2 + 1;
+    raycaster.setFromCamera(puntero, camera);
+    return raycaster.intersectObject(escudoGrupo, true).length > 0;
+}
+
+// Giro extra: se SUMA al giro continuo, así al terminar queda como si nada hubiera pasado
+function girarEscudo() {
+    if (escudoGirando) return;   // evita que se empalmen varios giros
+    escudoGirando = true;
+
+    const giro = { valor: 0 };
+    let anterior = 0;
+
+    gsap.to(giro, {
+        valor: Math.PI * 2 * clicVueltas,
+        duration: clicDuracion,
+        ease: clicEase,
+        onUpdate: () => {
+            escudoGrupo.rotation.y += giro.valor - anterior;
+            anterior = giro.valor;
+        },
+        onComplete: () => {
+            escudoGirando = false;
+        }
+    });
+}
+
+// Guarda dónde se presionó el mouse (para distinguir clic de arrastre)
+renderer.domElement.addEventListener('pointerdown', (e) => {
+    clicInicioX = e.clientX;
+    clicInicioY = e.clientY;
+});
+
+// Al soltar: si casi no se movió y estaba sobre el escudo, gira
+renderer.domElement.addEventListener('pointerup', (e) => {
+    const movido = Math.hypot(e.clientX - clicInicioX, e.clientY - clicInicioY);
+    if (movido > clicUmbralArrastre) return;
+    if (mouseSobreEscudo(e)) girarEscudo();
+});
+
+// Cursor de manita al pasar sobre el escudo
+renderer.domElement.addEventListener('pointermove', (e) => {
+    renderer.domElement.style.cursor = mouseSobreEscudo(e) ? 'pointer' : 'default';
+});
+
+//------Hover del escudo (se agranda al pasar el mouse)------
+const hoverAgrandar = 1.12;          // cuánto crece (1.12 = 12% más grande)
+const hoverDuracion = 0.35;          // segundos que tarda en crecer o regresar
+const hoverEaseEntrada = "power2.out";   // al entrar: arranca rápido y suaviza
+const hoverEaseSalida = "power2.inOut";  // al salir: regreso suave
+
+const hoverEscalaBase = escudoGrupo.scale.x;   // tamaño normal del escudo (se toma del que ya tiene)
+let escudoHover = false;
+
+// Anima el tamaño del escudo hacia el valor indicado
+function escalarEscudo(factor, ease) {
+    gsap.to(escudoGrupo.scale, {
+        x: hoverEscalaBase * factor,
+        y: hoverEscalaBase * factor,
+        z: hoverEscalaBase * factor,
+        duration: hoverDuracion,
+        ease: ease,
+        overwrite: "auto"   // si estaba creciendo y sale el mouse, cambia de dirección sin pelearse
+    });
+}
+
+// Al mover el mouse: solo anima cuando cambia entre "encima" y "fuera"
+renderer.domElement.addEventListener('pointermove', (e) => {
+    const encima = mouseSobreEscudo(e);
+    if (encima === escudoHover) return;
+    escudoHover = encima;
+    escalarEscudo(encima ? hoverAgrandar : 1, encima ? hoverEaseEntrada : hoverEaseSalida);
+});
+
+// Si el mouse sale del canvas estando sobre el escudo, regresa a su tamaño
+renderer.domElement.addEventListener('pointerleave', () => {
+    if (!escudoHover) return;
+    escudoHover = false;
+    escalarEscudo(1, hoverEaseSalida);
+});
+
 //--Renderizar la escena--
 function animate() {
     requestAnimationFrame(animate);
+
+    stats.begin();
 
     escudoGrupo.rotation.y += velocidadGiro; // giro continuo del escudo
 
     controls.update(); // requerido por el damping
     renderer.render(scene, camera);
+
+    stats.end();
 }
  
 animate();
