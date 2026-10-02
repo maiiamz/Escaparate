@@ -321,7 +321,7 @@ const nubeGrupo = new THREE.Group();
 scene.add(nubeGrupo);
 
 // Posición y tamaño
-const nubeX = -1;
+const nubeX = -2;
 const nubeY = 1.5;
 const nubeZ = -1.2;
 nubeGrupo.position.set(nubeX, nubeY - 0.08, nubeZ); // arranca en el punto más bajo del flote
@@ -370,7 +370,7 @@ const nube2Grupo = new THREE.Group();
 scene.add(nube2Grupo);
 
 // Posición y tamaño 
-const nube2X = 1;
+const nube2X = 2;
 const nube2Y = 1.4;
 const nube2Z = -1.2;
 nube2Grupo.position.set(nube2X, nube2Y - 0.08, nube2Z); // arranca en el punto más bajo del flote
