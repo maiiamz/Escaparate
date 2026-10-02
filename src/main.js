@@ -4,6 +4,7 @@ import Stats from 'three/addons/libs/stats.module.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { EXRLoader } from 'three/addons/loaders/EXRLoader.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
 //--Canvas--
 const canvas = document.querySelector('#scene');
@@ -750,6 +751,149 @@ pastoListaGrupos.forEach((pastoGrupo, i) => {
         yoyo: true,
         repeat: -1
     });
+});
+
+//------Gema de cristal------
+const gemaX = -2.5;
+const gemaY = -0.6;             // altura base (el piso está en y = -2)
+const gemaZ = 0.5;
+const gemaRadio = 0.50;
+const gemaAlargar = 3;         // qué tan alta es respecto a su ancho
+const gemaGiroDuracion = 8;      // segundos por vuelta completa
+const gemaFloteAmplitud = 0.06;  // cuánto sube y baja
+const gemaFloteDuracion = 2.2;   // segundos de cada subida o bajada
+
+// Ajustes del cristal
+const gemaIor = 2.0;                 // índice de refracción (1.5 = vidrio, 2.0 = diamante)
+const gemaGrosor = 0.8;              // grosor para la refracción (más alto = más deformación)
+const gemaDispersion = 0.4;          // separación de colores en los bordes (0 = ninguna)
+const gemaReflejos = 2.5;            // intensidad de los reflejos del entorno
+const gemaColorInterior = '#2fc8ff'; // tinte del cristal al atravesarlo
+const gemaNucleo = true;             // pequeño cristal brillante en el interior
+
+// Entorno de reflejos SOLO para las gemas (no cambia el aspecto del resto de la escena)
+const gemaPmrem = new THREE.PMREMGenerator(renderer);
+const gemaEntorno = gemaPmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+gemaPmrem.dispose();
+
+const gemaMat = new THREE.MeshPhysicalMaterial({
+    color: '#ff3bb1',
+    metalness: 0,
+    roughness: 0,
+    transmission: 1,                 // transparencia real: se ve lo que hay detrás
+    thickness: gemaGrosor,
+    ior: gemaIor,
+    dispersion: gemaDispersion,
+    attenuationColor: gemaColorInterior,
+    attenuationDistance: 0.6,
+    specularIntensity: 1,
+    clearcoat: 1,
+    clearcoatRoughness: 0,
+    envMap: gemaEntorno,
+    envMapIntensity: gemaReflejos,
+    flatShading: true                // caras planas, como cristal tallado
+});
+
+const gema = new THREE.Mesh(new THREE.OctahedronGeometry(gemaRadio, 0), gemaMat);
+gema.scale.set(1, gemaAlargar, 1);
+gema.position.set(gemaX, gemaY - gemaFloteAmplitud, gemaZ);
+gema.castShadow = false;             // un cristal con sombra sólida se ve falso
+gema.receiveShadow = false;
+scene.add(gema);
+
+// Núcleo interior: se ve refractado a través de las caras y da profundidad
+if (gemaNucleo) {
+    const nucleo = new THREE.Mesh(
+        new THREE.OctahedronGeometry(gemaRadio * 0.5, 0),
+        new THREE.MeshBasicMaterial({color: '#8fefff'})
+    );
+    gema.add(nucleo);
+}
+console.log("Gema");
+
+//Animación de la gema
+gsap.to(gema.rotation, {
+    y: Math.PI * 2,
+    duration: gemaGiroDuracion,
+    ease: "none",
+    repeat: -1
+});
+
+gsap.to(gema.position, {
+    y: gemaY + gemaFloteAmplitud,
+    duration: gemaFloteDuracion,
+    ease: "sine.inOut",
+    yoyo: true,
+    repeat: -1
+});
+
+//------Gema 2------
+const gema2X = 2.5;              // lado opuesto 
+const gema2Y = -0.6;             // altura base 
+const gema2Z = 0.5;
+const gema2Radio = 0.50;
+const gema2Alargar = 3;          // qué tan alta es respecto a su ancho
+const gema2GiroDuracion = 8;     // segundos por vuelta completa
+const gema2FloteAmplitud = 0.06; // cuánto sube y baja
+const gema2FloteDuracion = 2.2;  // segundos de cada subida o bajada
+
+// Ajustes del cristal
+const gema2Ior = 2.0;                 // índice de refracción (1.5 = vidrio, 2.0 = diamante)
+const gema2Grosor = 0.8;              // grosor para la refracción (más alto = más deformación)
+const gema2Dispersion = 0.4;          // separación de colores en los bordes (0 = ninguna)
+const gema2Reflejos = 2.5;            // intensidad de los reflejos del entorno
+const gema2ColorInterior = '#2fc8ff'; // tinte del cristal al atravesarlo
+const gema2Nucleo = true;             // pequeño cristal brillante en el interior
+
+const gema2Mat = new THREE.MeshPhysicalMaterial({
+    color: '#ff3bb1',
+    metalness: 0,
+    roughness: 0,
+    transmission: 1,                 // transparencia real: se ve lo que hay detrás
+    thickness: gema2Grosor,
+    ior: gema2Ior,
+    dispersion: gema2Dispersion,
+    attenuationColor: gema2ColorInterior,
+    attenuationDistance: 0.6,
+    specularIntensity: 1,
+    clearcoat: 1,
+    clearcoatRoughness: 0,
+    envMap: gemaEntorno,             
+    envMapIntensity: gema2Reflejos,
+    flatShading: true                // caras planas, como cristal tallado
+});
+
+const gema2 = new THREE.Mesh(new THREE.OctahedronGeometry(gema2Radio, 0), gema2Mat);
+gema2.scale.set(1, gema2Alargar, 1);
+gema2.position.set(gema2X, gema2Y - gema2FloteAmplitud, gema2Z);
+gema2.castShadow = false;
+gema2.receiveShadow = false;
+scene.add(gema2);
+
+// Núcleo interior
+if (gema2Nucleo) {
+    const nucleo2 = new THREE.Mesh(
+        new THREE.OctahedronGeometry(gema2Radio * 0.5, 0),
+        new THREE.MeshBasicMaterial({color: '#8fefff'})
+    );
+    gema2.add(nucleo2);
+}
+console.log("Gema 2");
+
+//Animación de la gema 2
+gsap.to(gema2.rotation, {
+    y: Math.PI * 2,
+    duration: gema2GiroDuracion,
+    ease: "none",
+    repeat: -1
+});
+
+gsap.to(gema2.position, {
+    y: gema2Y + gema2FloteAmplitud,
+    duration: gema2FloteDuracion,
+    ease: "sine.inOut",
+    yoyo: true,
+    repeat: -1
 });
 
 //------Destello del escudo------
